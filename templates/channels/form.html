@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - 网站监控平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ title }}</h1>
+    <a href="{{ url_for('channel_list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回列表
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">渠道名称 <span class="text-danger">*</span></label>
+                        {{ form.name(class="form-control", placeholder="例如：运维群机器人") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger small">{{ form.name.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="channel_type" class="form-label">渠道类型 <span class="text-danger">*</span></label>
+                        {{ form.channel_type(class="form-select") }}
+                        {% if form.channel_type.errors %}
+                            <div class="text-danger small">{{ form.channel_type.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="webhook_url" class="form-label">Webhook URL <span class="text-danger">*</span></label>
+                        {{ form.webhook_url(class="form-control", placeholder="https://oapi.dingtalk.com/robot/send?access_token=xxx") }}
+                        {% if form.webhook_url.errors %}
+                            <div class="text-danger small">{{ form.webhook_url.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="secret" class="form-label">签名密钥（可选）</label>
+                        {{ form.secret(class="form-control", placeholder="SEC开头的密钥") }}
+                        {% if form.secret.errors %}
+                            <div class="text-danger small">{{ form.secret.errors[0] }}</div>
+                        {% endif %}
+                        <div class="form-text">如果钉钉机器人配置了加签，请填写此项</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            <label class="form-check-label" for="is_active">启用此渠道</label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> 保存
+                        </button>
+                        <a href="{{ url_for('channel_list') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> 钉钉机器人配置说明</h6>
+            </div>
+            <div class="card-body">
+                <ol class="small text-muted ps-3 mb-0">
+                    <li class="mb-2">在钉钉群中添加"自定义机器人"</li>
+                    <li class="mb-2">安全设置建议选择"加签"方式</li>
+                    <li class="mb-2">复制Webhook地址填入上方</li>
+                    <li class="mb-2">如选择加签，复制密钥填入签名密钥</li>
+                    <li>保存后可点击"测试"按钮验证配置</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

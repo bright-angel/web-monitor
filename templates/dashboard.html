@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘 - 网站监控平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">仪表盘</h1>
+    <a href="{{ url_for('website_add') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> 添加网站
+    </a>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card total">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 opacity-75">监控总数</h6>
+                    <h2 class="mb-0">{{ stats.total }}</h2>
+                </div>
+                <i class="bi bi-globe fs-1 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card online">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 opacity-75">正常运行</h6>
+                    <h2 class="mb-0">{{ stats.online }}</h2>
+                </div>
+                <i class="bi bi-check-circle fs-1 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card offline">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 opacity-75">不可用</h6>
+                    <h2 class="mb-0">{{ stats.offline }}</h2>
+                </div>
+                <i class="bi bi-x-circle fs-1 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card error">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 opacity-75">异常</h6>
+                    <h2 class="mb-0">{{ stats.error }}</h2>
+                </div>
+                <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 网站列表 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">监控状态</h5>
+        <button class="btn btn-sm btn-outline-primary" onclick="refreshStatus()">
+            <i class="bi bi-arrow-clockwise"></i> 刷新
+        </button>
+    </div>
+    <div class="card-body">
+        {% if websites %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>网站名称</th>
+                        <th>URL</th>
+                        <th>状态</th>
+                        <th>状态码</th>
+                        <th>响应时间</th>
+                        <th>最后检查</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="websiteTableBody">
+                    {% for website in websites %}
+                    <tr data-id="{{ website.id }}">
+                        <td>
+                            <strong>{{ website.name }}</strong>
+                            {% if not website.is_active %}
+                            <span class="badge bg-secondary">已暂停</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ website.url }}" target="_blank" class="text-decoration-none">
+                                {{ website.url[:50] }}{% if website.url|length > 50 %}...{% endif %}
+                            </a>
+                        </td>
+                        <td>
+                            {% if website.current_status == 'online' %}
+                            <span class="status-badge status-online">
+                                <i class="bi bi-check-circle"></i> 正常
+                            </span>
+                            {% elif website.current_status == 'offline' %}
+                            <span class="status-badge status-offline">
+                                <i class="bi bi-x-circle"></i> 不可用
+                            </span>
+                            {% elif website.current_status == 'error' %}
+                            <span class="status-badge status-error">
+                                <i class="bi bi-exclamation-triangle"></i> 异常
+                            </span>
+                            {% else %}
+                            <span class="status-badge status-unknown">
+                                <i class="bi bi-question-circle"></i> 未知
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if website.last_status_code %}
+                            <span class="badge {% if website.last_status_code == 200 %}bg-success{% elif website.last_status_code >= 400 %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ website.last_status_code }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if website.last_response_time %}
+                            <span class="response-time">{{ "%.0f"|format(website.last_response_time) }}ms</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if website.last_check_time %}
+                            <small class="text-muted">{{ website.last_check_time.strftime('%m-%d %H:%M:%S') }}</small>
+                            {% else %}
+                            <span class="text-muted">从未</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary btn-action" onclick="checkNow({{ website.id }})" title="立即检查">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                                <a href="{{ url_for('website_logs', id=website.id) }}" class="btn btn-sm btn-outline-info btn-action" title="查看日志">
+                                    <i class="bi bi-list-ul"></i>
+                                </a>
+                                <a href="{{ url_for('website_edit', id=website.id) }}" class="btn btn-sm btn-outline-secondary btn-action" title="编辑">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="text-muted mt-2">暂无监控网站</p>
+            <a href="{{ url_for('website_add') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> 添加第一个网站
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function checkNow(id) {
+    fetch(`/websites/${id}/check`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('检查失败，请重试');
+        });
+}
+
+function refreshStatus() {
+    location.reload();
+}
+
+// 自动刷新（每30秒）
+setInterval(refreshStatus, 30000);
+</script>
+{% endblock %}

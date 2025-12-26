@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}监控日志 - {{ website.name }} - 网站监控平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">监控日志</h1>
+        <p class="text-muted mb-0">{{ website.name }} - {{ website.url }}</p>
+    </div>
+    <a href="{{ url_for('website_list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回列表
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if logs.items %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>检查时间</th>
+                        <th>状态</th>
+                        <th>状态码</th>
+                        <th>响应时间</th>
+                        <th>错误信息</th>
+                        <th>通知</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs.items %}
+                    <tr>
+                        <td>{{ log.checked_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if log.status == 'online' %}
+                            <span class="badge bg-success">正常</span>
+                            {% elif log.status == 'offline' %}
+                            <span class="badge bg-danger">不可用</span>
+                            {% else %}
+                            <span class="badge bg-warning">异常</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.status_code %}
+                            <span class="badge {% if log.status_code == 200 %}bg-success{% elif log.status_code >= 400 %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ log.status_code }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.response_time %}
+                            <span class="response-time">{{ "%.0f"|format(log.response_time) }}ms</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.error_message %}
+                            <span class="text-danger small">{{ log.error_message[:50] }}{% if log.error_message|length > 50 %}...{% endif %}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.notification_sent %}
+                            <span class="badge bg-info"><i class="bi bi-bell"></i> 已发送</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        {% if logs.pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if logs.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('website_logs', id=website.id, page=logs.prev_num) }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == logs.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('website_logs', id=website.id, page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if logs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('website_logs', id=website.id, page=logs.next_num) }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="text-muted mt-2">暂无监控日志</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
